@@ -34,11 +34,16 @@ class MonsterSpider(scrapy.Spider):
 
     def update_cv(self, response):
         form_data = {}
-        text_tags = Selector(response=response).xpath('//form[@id="form0"]//input[@type="text" and @name and @value]').extract()
+
+        # Extracting <input> tags name/value
+        text_tags = Selector(response=response).xpath('//form[@id="form0"]//input[(@type="text" or @type="hidden" or (@type="checkbox" and @checked) or (@type="radio" and @checked)) and @name and @value]').extract()
         for text_tag in text_tags:
             name = Selector(text=text_tag).xpath('//input/@name').extract()[0]
             value = Selector(text=text_tag).xpath('//input/@value').extract()[0]
-            form_data[name] = value
+            if name not in form_data:
+                form_data[name] = value
+
+        # Extracting <select> tags name/value
         select_tags = Selector(response=response).xpath('//form[@id="form0"]//select[@name]').extract()
         for select_tag in select_tags:
             name = Selector(text=select_tag).xpath('//select/@name').extract()[0]
@@ -47,17 +52,22 @@ class MonsterSpider(scrapy.Spider):
                 value = option_tags[0]
             else:
                 value = Selector(text=select_tag).xpath('//select//option[@value]/@value').extract()[0]
-            print '%s: %s' % (name, value)
+            if name not in form_data:
+                form_data[name] = value
 
+        form_data['Command'] = 'update'
+
+        # Creating the request to reinject the form data
         req = scrapy.FormRequest(
             'http://mon.monster.fr/Resume/Settings/%s'
                 % self.settings.get('MONSTER_CV_HASH'),
             formdata=form_data,
             callback=self.check_update
         )
-        self.log(req.headers, loglevel=log.WARNING)
-
         return [req]
 
     def check_update(self, response):
-        self.log('Done.', loglevel=log.INFO)
+        if 'erreur' in response.body:
+            self.log('Fail :\\')
+        else:
+            self.log('Update success!')
