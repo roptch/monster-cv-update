@@ -15,6 +15,7 @@ NEWSPIDER_MODULE = 'monster_cv_update.spiders'
 
 MONSTER_USERNAME = '' # Fill your monster username here
 MONSTER_PASSWORD = '' # Fill your monster password here
+MONSTER_CV_HASH  = '' # The CV hash located in the URL when you access your CV.
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'monster_cv_update (+http://www.yourdomain.com)'
